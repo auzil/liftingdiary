@@ -2,12 +2,13 @@
   "name": "liftingdiarycourse",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:reset": "tsx src/db/reset.ts && drizzle-kit migrate"
+    "db:reset": "tsx src/db/reset.ts && drizzle-kit migrate && tsx src/db/seed.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.38.0",
