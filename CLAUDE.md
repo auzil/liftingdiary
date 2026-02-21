@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `docs/ui.md` — UI component and styling standards
 - `docs/data-fetching.md` — data fetching conventions (Server Components, repository pattern, auth enforcement)
+- `docs/workout-page.md` — workout session page feature (`/workout`): state machine, service functions, server actions, one-active constraint
 
 ## Commands
 

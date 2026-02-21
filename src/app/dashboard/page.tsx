@@ -11,7 +11,7 @@ import {
   startOfDay,
   endOfDay,
 } from "date-fns"
-import { getWorkoutsWithDetailsByUserId } from "@/services/workouts"
+import { getWorkoutsWithDetailsByUserId, getActiveWorkoutByUserId } from "@/services/workouts"
 import { DashboardClient } from "./dashboard-client"
 
 type DateRange = "week" | "month" | "year"
@@ -41,11 +41,17 @@ export default async function DashboardPage({
     ? { start: startOfDay(new Date(params.date)), end: endOfDay(new Date(params.date)) }
     : getDateRange((params.range ?? "week") as DateRange, now)
 
-  const workouts = await getWorkoutsWithDetailsByUserId(userId, dateRange)
+  const [workouts, activeWorkout] = await Promise.all([
+    getWorkoutsWithDetailsByUserId(userId, dateRange),
+    getActiveWorkoutByUserId(userId),
+  ])
 
   return (
     <Suspense>
-      <DashboardClient workouts={workouts} />
+      <DashboardClient
+        workouts={workouts}
+        activeWorkoutStartedAt={activeWorkout?.startedAt ?? null}
+      />
     </Suspense>
   )
 }

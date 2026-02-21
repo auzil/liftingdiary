@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { Dumbbell, Calendar as CalendarIcon, Clock } from "lucide-react"
+import { Dumbbell, Calendar as CalendarIcon, Clock, Activity } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { WorkoutWithDetails } from "@/services/workouts"
 
@@ -35,10 +35,39 @@ const PRESETS: { value: DateRange; label: string }[] = [
   { value: "year", label: "This Year" },
 ]
 
-export function DashboardClient({ workouts }: { workouts: WorkoutWithDetails[] }) {
+function formatElapsed(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":")
+}
+
+export function DashboardClient({
+  workouts,
+  activeWorkoutStartedAt,
+}: {
+  workouts: WorkoutWithDetails[]
+  activeWorkoutStartedAt: Date | null
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [elapsed, setElapsed] = useState<number>(0)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!activeWorkoutStartedAt) return
+    const tick = () =>
+      setElapsed(Math.floor((Date.now() - activeWorkoutStartedAt.getTime()) / 1000))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [activeWorkoutStartedAt?.getTime()])
 
   const range = searchParams.get("range") ?? "week"
   const dateParam = searchParams.get("date")
@@ -60,9 +89,29 @@ export function DashboardClient({ workouts }: { workouts: WorkoutWithDetails[] }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Your workout history</p>
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Your workout history</p>
+        </div>
+
+        <Button
+          variant={activeWorkoutStartedAt ? "destructive" : "default"}
+          className="gap-2"
+          onClick={() => router.push("/workout")}
+        >
+          {activeWorkoutStartedAt ? (
+            <>
+              <Activity className="h-4 w-4" />
+              Active · {formatElapsed(elapsed)}
+            </>
+          ) : (
+            <>
+              <Dumbbell className="h-4 w-4" />
+              Workout
+            </>
+          )}
+        </Button>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -77,32 +126,34 @@ export function DashboardClient({ workouts }: { workouts: WorkoutWithDetails[] }
           </Button>
         ))}
 
-        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant={activeFilter.kind === "exact" ? "default" : "outline"}
-              size="sm"
-              className={cn("gap-1.5", activeFilter.kind !== "exact" && "text-muted-foreground")}
-            >
-              <CalendarIcon className="h-3.5 w-3.5" />
-              {activeFilter.kind === "exact"
-                ? format(activeFilter.date, "dd.MM.yyyy")
-                : "Pick a date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent id="calendar-popover" className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={activeFilter.kind === "exact" ? activeFilter.date : undefined}
-              onSelect={(date) => {
-                if (date) {
-                  applyFilter({ kind: "exact", date })
-                  setCalendarOpen(false)
-                }
-              }}
-            />
-          </PopoverContent>
-        </Popover>
+        {mounted && (
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant={activeFilter.kind === "exact" ? "default" : "outline"}
+                size="sm"
+                className={cn("gap-1.5", activeFilter.kind !== "exact" && "text-muted-foreground")}
+              >
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {activeFilter.kind === "exact"
+                  ? format(activeFilter.date, "dd.MM.yyyy")
+                  : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent id="calendar-popover" className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={activeFilter.kind === "exact" ? activeFilter.date : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    applyFilter({ kind: "exact", date })
+                    setCalendarOpen(false)
+                  }
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
 
       <Separator />
