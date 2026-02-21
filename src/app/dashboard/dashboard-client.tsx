@@ -1,18 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import {
-  format,
-  isWithinInterval,
-  startOfWeek,
-  endOfWeek,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
-  startOfDay,
-  endOfDay,
-} from "date-fns"
+import { useRouter, useSearchParams } from "next/navigation"
+import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -39,35 +29,34 @@ function durationMinutes(workout: WorkoutWithDetails): number | null {
   return Math.round(diff / 60000)
 }
 
-function getDateRange(range: DateRange, now: Date): { start: Date; end: Date } {
-  switch (range) {
-    case "week":
-      return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) }
-    case "month":
-      return { start: startOfMonth(now), end: endOfMonth(now) }
-    case "year":
-      return { start: startOfYear(now), end: endOfYear(now) }
-  }
-}
-
 const PRESETS: { value: DateRange; label: string }[] = [
   { value: "week", label: "This Week" },
   { value: "month", label: "This Month" },
   { value: "year", label: "This Year" },
 ]
 
-export function DashboardClient({ workouts, today }: { workouts: WorkoutWithDetails[]; today: Date }) {
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>({ kind: "preset", range: "week" })
+export function DashboardClient({ workouts }: { workouts: WorkoutWithDetails[] }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [calendarOpen, setCalendarOpen] = useState(false)
 
-  const { start, end } =
-    activeFilter.kind === "exact"
-      ? { start: startOfDay(activeFilter.date), end: endOfDay(activeFilter.date) }
-      : getDateRange(activeFilter.range, today)
+  const range = searchParams.get("range") ?? "week"
+  const dateParam = searchParams.get("date")
+  const activeFilter: ActiveFilter = dateParam
+    ? { kind: "exact", date: new Date(dateParam) }
+    : { kind: "preset", range: range as DateRange }
 
-  const filtered = workouts.filter((w) =>
-    isWithinInterval(new Date(w.date), { start, end })
-  )
+  function applyFilter(filter: ActiveFilter) {
+    const params = new URLSearchParams(searchParams.toString())
+    if (filter.kind === "preset") {
+      params.set("range", filter.range)
+      params.delete("date")
+    } else {
+      params.set("date", format(filter.date, "yyyy-MM-dd"))
+      params.delete("range")
+    }
+    router.replace(`?${params}`)
+  }
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
@@ -82,7 +71,7 @@ export function DashboardClient({ workouts, today }: { workouts: WorkoutWithDeta
             key={value}
             variant={activeFilter.kind === "preset" && activeFilter.range === value ? "default" : "outline"}
             size="sm"
-            onClick={() => setActiveFilter({ kind: "preset", range: value })}
+            onClick={() => applyFilter({ kind: "preset", range: value })}
           >
             {label}
           </Button>
@@ -107,7 +96,7 @@ export function DashboardClient({ workouts, today }: { workouts: WorkoutWithDeta
               selected={activeFilter.kind === "exact" ? activeFilter.date : undefined}
               onSelect={(date) => {
                 if (date) {
-                  setActiveFilter({ kind: "exact", date })
+                  applyFilter({ kind: "exact", date })
                   setCalendarOpen(false)
                 }
               }}
@@ -118,13 +107,13 @@ export function DashboardClient({ workouts, today }: { workouts: WorkoutWithDeta
 
       <Separator />
 
-      {filtered.length === 0 ? (
+      {workouts.length === 0 ? (
         <p className="text-sm text-muted-foreground py-12 text-center">
           No workouts in this period.
         </p>
       ) : (
         <div className="space-y-4">
-          {filtered.map((workout) => {
+          {workouts.map((workout) => {
             const duration = durationMinutes(workout)
             return (
               <Card key={workout.id}>

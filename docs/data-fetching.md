@@ -118,6 +118,99 @@ export default async function DashboardPage() {
 
 ---
 
+## URL-Driven Server-Side Filtering
+
+When a page supports filterable lists (e.g. by date range), filter state lives in URL query params — not in `useState`. This makes filters bookmarkable, shareable, and preserved on refresh. Filtering happens at the DB level in the service, not in the client.
+
+**Three-layer pattern:**
+
+```
+URL params (?range=week | ?date=YYYY-MM-DD)
+  → page.tsx  (parse params, compute dateRange, call service)
+    → service  (Drizzle gte/lte filter)
+      → db
+```
+
+**page.tsx** — await `searchParams`, parse filter, pass `dateRange` to service, wrap client in `<Suspense>`:
+
+```tsx
+// src/app/dashboard/page.tsx
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string; date?: string }>
+}) {
+  const { userId } = await auth()
+  if (!userId) redirect("/")
+
+  const params = await searchParams
+  const dateRange = params.date
+    ? { start: startOfDay(new Date(params.date)), end: endOfDay(new Date(params.date)) }
+    : getDateRange((params.range ?? "week") as DateRange, new Date())
+
+  const workouts = await getWorkoutsWithDetailsByUserId(userId, dateRange)
+
+  return (
+    <Suspense>
+      <DashboardClient workouts={workouts} />
+    </Suspense>
+  )
+}
+```
+
+**service** — accept optional `dateRange`, filter at the DB level with Drizzle's `and`/`gte`/`lte`:
+
+```ts
+// src/services/workouts.ts
+export async function getWorkoutsWithDetailsByUserId(
+  userId: string,
+  dateRange?: { start: Date; end: Date }
+) {
+  return db.query.workouts.findMany({
+    where: dateRange
+      ? and(
+          eq(workouts.userId, userId),
+          gte(workouts.date, format(dateRange.start, "yyyy-MM-dd")),
+          lte(workouts.date, format(dateRange.end, "yyyy-MM-dd")),
+        )
+      : eq(workouts.userId, userId),
+    ...
+  })
+}
+```
+
+**client** — use `useSearchParams` to read filter state, `router.replace` to write it. No `useState` for filter, no client-side `Array.filter`:
+
+```tsx
+// src/app/dashboard/dashboard-client.tsx
+const router = useRouter()
+const searchParams = useSearchParams()
+
+const dateParam = searchParams.get("date")
+const activeFilter: ActiveFilter = dateParam
+  ? { kind: "exact", date: new Date(dateParam) }
+  : { kind: "preset", range: (searchParams.get("range") ?? "week") as DateRange }
+
+function applyFilter(filter: ActiveFilter) {
+  const params = new URLSearchParams(searchParams.toString())
+  if (filter.kind === "preset") {
+    params.set("range", filter.range)
+    params.delete("date")
+  } else {
+    params.set("date", format(filter.date, "yyyy-MM-dd"))
+    params.delete("range")
+  }
+  router.replace(`?${params}`)
+}
+```
+
+**Rules:**
+- `<Suspense>` wrapper is required in the page when any client child uses `useSearchParams`.
+- `searchParams` in Next.js 16 Server Components is a `Promise` — always `await` it.
+- Never filter in the client with `Array.filter` when the server can filter at the DB level.
+
+---
+
 ## Auth Enforcement
 
 Every Server Component page that fetches data must:

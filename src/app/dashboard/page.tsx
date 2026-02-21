@@ -1,13 +1,51 @@
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
+import {
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  startOfDay,
+  endOfDay,
+} from "date-fns"
 import { getWorkoutsWithDetailsByUserId } from "@/services/workouts"
 import { DashboardClient } from "./dashboard-client"
 
-export default async function DashboardPage() {
+type DateRange = "week" | "month" | "year"
+
+function getDateRange(range: DateRange, now: Date): { start: Date; end: Date } {
+  switch (range) {
+    case "week":
+      return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) }
+    case "month":
+      return { start: startOfMonth(now), end: endOfMonth(now) }
+    case "year":
+      return { start: startOfYear(now), end: endOfYear(now) }
+  }
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string; date?: string }>
+}) {
   const { userId } = await auth()
   if (!userId) redirect("/")
 
-  const workouts = await getWorkoutsWithDetailsByUserId(userId)
+  const params = await searchParams
+  const now = new Date()
+  const dateRange = params.date
+    ? { start: startOfDay(new Date(params.date)), end: endOfDay(new Date(params.date)) }
+    : getDateRange((params.range ?? "week") as DateRange, now)
 
-  return <DashboardClient workouts={workouts} today={new Date()} />
+  const workouts = await getWorkoutsWithDetailsByUserId(userId, dateRange)
+
+  return (
+    <Suspense>
+      <DashboardClient workouts={workouts} />
+    </Suspense>
+  )
 }
