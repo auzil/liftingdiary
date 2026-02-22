@@ -72,7 +72,7 @@ export function ExercisesAnalyticsClient({ exercises, progressByExercise }: Prop
       </Card>
 
       <Dialog open={selected !== null} onOpenChange={(open) => { if (!open) setSelected(null) }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg">
           <DialogHeader>
             <DialogTitle>{selected?.name}</DialogTitle>
           </DialogHeader>
@@ -84,6 +84,7 @@ export function ExercisesAnalyticsClient({ exercises, progressByExercise }: Prop
                 : "Log this exercise in more workouts to see a progress chart."}
             </p>
           ) : (
+            <div className="w-full overflow-hidden">
             <ChartContainer config={chartConfig} className="h-56 w-full">
               <LineChart data={progress} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -91,8 +92,9 @@ export function ExercisesAnalyticsClient({ exercises, progressByExercise }: Prop
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 9 }}
                   interval="preserveStartEnd"
+                  minTickGap={40}
                 />
                 <YAxis
                   tickLine={false}
@@ -115,6 +117,7 @@ export function ExercisesAnalyticsClient({ exercises, progressByExercise }: Prop
                 />
               </LineChart>
             </ChartContainer>
+            </div>
           )}
         </DialogContent>
       </Dialog>

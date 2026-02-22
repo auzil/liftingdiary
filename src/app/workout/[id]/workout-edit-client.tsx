@@ -28,6 +28,7 @@ import {
   addSetAction,
   updateSetAction,
   deleteSetAction,
+  deleteWorkoutAction,
 } from "@/actions/workouts"
 import type { WorkoutSession } from "@/services/workouts"
 
@@ -350,6 +351,42 @@ export function WorkoutEditClient({ workout, allExercises }: Props) {
               </div>
             </PopoverContent>
           </Popover>
+
+          <Separator />
+
+          {/* Delete workout */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full" disabled={mutating}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Workout
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete workout?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  <span className="font-medium text-foreground">
+                    {workout.name ?? "This workout"}
+                  </span>{" "}
+                  and all its exercises and sets will be permanently deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={() =>
+                    startMutation(async () => {
+                      await deleteWorkoutAction(workout.id)
+                    })
+                  }
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
       </div>
