@@ -207,21 +207,107 @@ All dialogs close optimistically before the server action completes. The page re
 
 ---
 
+---
+
+## Analytics — Exercises (`/analytics/exercises`)
+
+**Files:** `src/app/analytics/exercises/page.tsx`, `src/app/analytics/exercises/exercises-analytics-client.tsx`
+
+### What it does
+
+Analytics view showing every exercise the user has ever logged, ordered by most recently used. Displays the all-time max weight per exercise. Clicking an exercise opens a modal with a line chart of max weight over time.
+
+### Server Component (`page.tsx`)
+
+1. Auth check; redirects to `/` if not logged in.
+2. Calls `getExerciseAnalyticsByUserId(userId)` to get the exercise list.
+3. Iterates over every exercise and calls `getExerciseProgressByUserId(userId, ex.id)` for each, using `Promise.all` to run them in parallel.
+4. Builds `progressByExercise: Record<string, ExerciseProgressPoint[]>` (keyed by exercise composite id).
+5. Passes `exercises` and `progressByExercise` to `ExercisesAnalyticsClient`.
+
+No `searchParams`. All progress data is pre-fetched server-side so the client needs no additional fetching when a user opens the modal.
+
+### Client Component (`exercises-analytics-client.tsx`)
+
+**State:**
+- `selected: ExerciseAnalytics | null` — the exercise whose progress dialog is open (`null` = closed)
+
+**UI:**
+- Back button (`Button` + `ArrowLeft` icon, `Link` to `/dashboard`) — absolute top-left
+- `Card` centered, `max-w-md`
+- `CardHeader` with title "Exercise History"
+- `CardContent`:
+  - Empty state: centered `<p className="text-sm text-muted-foreground">` if no exercises logged
+  - List: each exercise is a `<button>` (not a static row) that sets `selected` on click:
+    - Exercise name (`text-sm font-medium`)
+    - Last used date (`text-xs text-muted-foreground`, formatted `dd.MM.yyyy`)
+    - `Badge variant="secondary"` showing max weight in kg (omitted if `maxWeight` is null)
+
+**Progress dialog:**
+
+A `Dialog` opens when `selected !== null`. Content:
+- `DialogTitle` — exercise name
+- If `progress.length < 2`: informational text ("no sets" or "log in more workouts to see chart")
+- If `progress.length >= 2`: a Recharts `LineChart` inside `ChartContainer` (224 px tall):
+  - `CartesianGrid` (horizontal only, dashed)
+  - `XAxis` keyed on `date` string, `interval="preserveStartEnd"`
+  - `YAxis` with 36 px width
+  - `ChartTooltip` with `ChartTooltipContent indicator="line"`
+  - Single `Line` (type `"monotone"`, `dataKey="maxWeight"`, `connectNulls={true}`)
+
+### Service functions (`src/services/exercises.ts`)
+
+**`getExerciseAnalyticsByUserId(userId)`**
+- Runs two parallel Drizzle queries — one for global exercises, one for custom exercises
+- Each query: joins `workoutExercises` → `exercises`/`customExercises` → `workouts` (filtered by userId) → left join `sets`
+- Aggregates `MAX(workouts.startedAt)` as `lastUsedAt` and `MAX(sets.weight)` as `maxWeight`, grouped by exercise
+- Merges both result arrays and sorts by `lastUsedAt DESC` in the service layer
+
+Return type:
+```ts
+export type ExerciseAnalytics = {
+  id: string           // composite key: "e{id}" | "c{id}"
+  name: string
+  lastUsedAt: Date
+  maxWeight: string | null  // numeric string from DB
+}
+```
+
+**`getExerciseProgressByUserId(userId, exerciseKey)`**
+- `exerciseKey` is the composite key (`"e{id}"` for global, `"c{id}"` for custom)
+- Queries `workoutExercises` → `workouts` (filtered by userId) → left join `sets`, filtered to the specific exercise
+- Aggregates `MAX(sets.weight)` per workout, ordered by `workouts.startedAt ASC`
+- Formats `startedAt` as `"dd.MM.yyyy"` string and parses weight to float
+
+Return type:
+```ts
+export type ExerciseProgressPoint = {
+  date: string       // formatted "dd.MM.yyyy" for display on XAxis
+  maxWeight: number  // parsed float
+}
+```
+
+---
+
 ## Navigation Map
 
 ```
 /dashboard
-  ├── → /workout          (Workout button)
-  ├── → /workout/[id]     (Pencil icon on each card)
-  └── → /exercises        (Exercises link)
+  ├── → /workout              (Workout button)
+  ├── → /workout/[id]         (Pencil icon on each card)
+  ├── → /exercises            (Exercises link)
+  └── → /analytics/exercises  (Analytics link)
 
 /workout
-  ├── → /dashboard        (back button)
-  └── → /exercises        (link)
+  ├── → /dashboard            (back button)
+  └── → /exercises            (link)
 
 /workout/[id]
-  └── → /dashboard        (back button)
+  └── → /dashboard            (back button)
 
 /exercises
-  └── → /dashboard        (back button)
+  └── → /dashboard            (back button)
+
+/analytics/exercises
+  └── → /dashboard            (back button)
 ```

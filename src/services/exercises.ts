@@ -1,6 +1,105 @@
 import { db } from "@/db"
-import { customExercises, exercises } from "@/db/schema"
-import { eq, and } from "drizzle-orm"
+import { customExercises, exercises, workoutExercises, workouts, sets } from "@/db/schema"
+import { eq, and, max, asc } from "drizzle-orm"
+
+export type ExerciseProgressPoint = {
+  date: string       // formatted "dd.MM.yyyy" for display
+  maxWeight: number  // parsed float
+}
+
+export async function getExerciseProgressByUserId(
+  userId: string,
+  exerciseKey: string, // "e{id}" | "c{id}"
+): Promise<ExerciseProgressPoint[]> {
+  const isCustom = exerciseKey.startsWith("c")
+  const numericId = parseInt(exerciseKey.slice(1), 10)
+
+  const rows = await db
+    .select({
+      startedAt: workouts.startedAt,
+      maxWeight: max(sets.weight),
+    })
+    .from(workoutExercises)
+    .innerJoin(
+      workouts,
+      and(eq(workoutExercises.workoutId, workouts.id), eq(workouts.userId, userId)),
+    )
+    .leftJoin(sets, eq(sets.workoutExerciseId, workoutExercises.id))
+    .where(
+      isCustom
+        ? eq(workoutExercises.customExerciseId, numericId)
+        : eq(workoutExercises.exerciseId, numericId),
+    )
+    .groupBy(workouts.id, workouts.startedAt)
+    .orderBy(asc(workouts.startedAt))
+
+  return rows
+    .filter((r) => r.maxWeight !== null)
+    .map((r) => ({
+      date: r.startedAt.toLocaleDateString("en-GB").replace(/\//g, "."),
+      maxWeight: parseFloat(r.maxWeight as string),
+    }))
+}
+
+export type ExerciseAnalytics = {
+  id: string           // composite key: "e{id}" | "c{id}"
+  name: string
+  lastUsedAt: Date
+  maxWeight: string | null  // numeric string from DB
+}
+
+export async function getExerciseAnalyticsByUserId(userId: string): Promise<ExerciseAnalytics[]> {
+  const [globalRows, customRows] = await Promise.all([
+    // Global exercises used in this user's workouts
+    db
+      .select({
+        id: exercises.id,
+        name: exercises.name,
+        lastUsedAt: max(workouts.startedAt),
+        maxWeight: max(sets.weight),
+      })
+      .from(workoutExercises)
+      .innerJoin(exercises, eq(workoutExercises.exerciseId, exercises.id))
+      .innerJoin(workouts, and(eq(workoutExercises.workoutId, workouts.id), eq(workouts.userId, userId)))
+      .leftJoin(sets, eq(sets.workoutExerciseId, workoutExercises.id))
+      .groupBy(exercises.id, exercises.name),
+
+    // Custom exercises used in this user's workouts
+    db
+      .select({
+        id: customExercises.id,
+        name: customExercises.name,
+        lastUsedAt: max(workouts.startedAt),
+        maxWeight: max(sets.weight),
+      })
+      .from(workoutExercises)
+      .innerJoin(customExercises, eq(workoutExercises.customExerciseId, customExercises.id))
+      .innerJoin(workouts, and(eq(workoutExercises.workoutId, workouts.id), eq(workouts.userId, userId)))
+      .leftJoin(sets, eq(sets.workoutExerciseId, workoutExercises.id))
+      .groupBy(customExercises.id, customExercises.name),
+  ])
+
+  const merged: ExerciseAnalytics[] = [
+    ...globalRows
+      .filter((r) => r.lastUsedAt !== null)
+      .map((r) => ({
+        id: `e${r.id}`,
+        name: r.name,
+        lastUsedAt: r.lastUsedAt as Date,
+        maxWeight: r.maxWeight,
+      })),
+    ...customRows
+      .filter((r) => r.lastUsedAt !== null)
+      .map((r) => ({
+        id: `c${r.id}`,
+        name: r.name,
+        lastUsedAt: r.lastUsedAt as Date,
+        maxWeight: r.maxWeight,
+      })),
+  ]
+
+  return merged.sort((a, b) => b.lastUsedAt.getTime() - a.lastUsedAt.getTime())
+}
 
 export type CustomExercise = typeof customExercises.$inferSelect
 

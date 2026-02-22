@@ -100,6 +100,9 @@ export function DashboardClient({
           <Button variant="ghost" size="sm" asChild>
             <Link href="/exercises">Exercises</Link>
           </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/analytics/exercises">Analytics</Link>
+          </Button>
           <Button
             variant={activeWorkoutStartedAt ? "destructive" : "default"}
             className="gap-2"
