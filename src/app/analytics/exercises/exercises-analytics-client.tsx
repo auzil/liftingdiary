@@ -107,10 +107,11 @@ export function ExercisesAnalyticsClient({ exercises, progressByExercise }: Prop
                 <Line
                   type="monotone"
                   dataKey="maxWeight"
-                  stroke="var(--color-maxWeight)"
+                  stroke="oklch(0.646 0.222 41.116)"
                   strokeWidth={2}
-                  dot={{ r: 3, fill: "var(--color-maxWeight)" }}
+                  dot={{ r: 4, fill: "oklch(0.646 0.222 41.116)", stroke: "none" }}
                   activeDot={{ r: 5 }}
+                  connectNulls={true}
                 />
               </LineChart>
             </ChartContainer>
