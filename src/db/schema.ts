@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, numeric, date, timestamp, index } from 'drizzle-orm/pg-core'
+import { pgTable, serial, text, integer, numeric, date, timestamp, index, unique } from 'drizzle-orm/pg-core'
 import { relations, sql } from 'drizzle-orm'
 
 // Exercise catalog — shared across all users and workouts
@@ -7,6 +7,17 @@ export const exercises = pgTable('exercises', {
   name: text('name').notNull().unique(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+
+// User-specific custom exercises
+export const customExercises = pgTable('custom_exercises', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => [
+  index('custom_exercises_user_id_idx').on(t.userId),
+  unique('custom_exercises_user_id_name_unique').on(t.userId, t.name),
+])
 
 // A training session belonging to a user
 export const workouts = pgTable('workouts', {
@@ -25,7 +36,8 @@ export const workouts = pgTable('workouts', {
 export const workoutExercises = pgTable('workout_exercises', {
   id: serial('id').primaryKey(),
   workoutId: integer('workout_id').notNull().references(() => workouts.id, { onDelete: 'cascade' }),
-  exerciseId: integer('exercise_id').notNull().references(() => exercises.id),
+  exerciseId: integer('exercise_id').references(() => exercises.id),
+  customExerciseId: integer('custom_exercise_id').references(() => customExercises.id, { onDelete: 'cascade' }),
   orderIndex: integer('order_index').notNull(),
 }, (t) => [
   index('workout_exercises_workout_id_idx').on(t.workoutId),
@@ -46,6 +58,10 @@ export const exercisesRelations = relations(exercises, ({ many }) => ({
   workoutExercises: many(workoutExercises),
 }))
 
+export const customExercisesRelations = relations(customExercises, ({ many }) => ({
+  workoutExercises: many(workoutExercises),
+}))
+
 export const workoutsRelations = relations(workouts, ({ many }) => ({
   workoutExercises: many(workoutExercises),
 }))
@@ -53,6 +69,7 @@ export const workoutsRelations = relations(workouts, ({ many }) => ({
 export const workoutExercisesRelations = relations(workoutExercises, ({ one, many }) => ({
   workout: one(workouts, { fields: [workoutExercises.workoutId], references: [workouts.id] }),
   exercise: one(exercises, { fields: [workoutExercises.exerciseId], references: [exercises.id] }),
+  customExercise: one(customExercises, { fields: [workoutExercises.customExerciseId], references: [customExercises.id] }),
   sets: many(sets),
 }))
 

@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Docs First
+
+**Before writing any code, read the relevant files in `docs/`.** These files define standards that all code in this repo must follow:
+
+- `docs/ui.md` — UI component and styling standards
+- `docs/data-fetching.md` — data fetching conventions (Server Components, repository pattern, auth enforcement)
+- `docs/pages.md` — all feature pages (dashboard, workout session, edit workout, exercises): state machines, server actions, navigation
+
 ## Commands
 
 ```bash
