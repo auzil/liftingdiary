@@ -1,5 +1,5 @@
 import { db } from "@/db"
-import { workouts } from "@/db/schema"
+import { workouts, exercises, workoutExercises, sets } from "@/db/schema"
 import { eq, desc, and, gte, lte, isNull } from "drizzle-orm"
 import { format } from "date-fns"
 
@@ -14,6 +14,7 @@ export async function getLatestWorkoutByUserId(userId: string) {
         orderBy: (we, { asc }) => [asc(we.orderIndex)],
         with: {
           exercise: true,
+          customExercise: true,
           sets: { orderBy: (s, { asc }) => [asc(s.setNumber)] },
         },
       },
@@ -51,6 +52,76 @@ export async function updateWorkoutName(workoutId: number, userId: string, name:
     .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
 }
 
+// ── Exercises catalog ─────────────────────────────────────────────────────
+
+export type Exercise = typeof exercises.$inferSelect
+
+// ── Workout-exercise mutations ────────────────────────────────────────────
+
+export async function addExerciseToWorkout(
+  workoutId: number,
+  userId: string,
+  exerciseId: number | null,
+  customExerciseId?: number,
+) {
+  const workout = await db.query.workouts.findFirst({
+    where: and(eq(workouts.id, workoutId), eq(workouts.userId, userId)),
+  })
+  if (!workout) return
+
+  const existing = await db.select().from(workoutExercises).where(eq(workoutExercises.workoutId, workoutId))
+  const nextIndex = existing.length
+
+  await db.insert(workoutExercises).values({ workoutId, exerciseId, customExerciseId, orderIndex: nextIndex })
+}
+
+export async function removeExerciseFromWorkout(workoutExerciseId: number, userId: string) {
+  const we = await db.query.workoutExercises.findFirst({
+    where: eq(workoutExercises.id, workoutExerciseId),
+    with: { workout: true },
+  })
+  if (!we || we.workout.userId !== userId) return
+
+  await db.delete(workoutExercises).where(eq(workoutExercises.id, workoutExerciseId))
+}
+
+// ── Set mutations ─────────────────────────────────────────────────────────
+
+export async function addSet(workoutExerciseId: number, userId: string, reps: number, weight: string) {
+  const we = await db.query.workoutExercises.findFirst({
+    where: eq(workoutExercises.id, workoutExerciseId),
+    with: { workout: true },
+  })
+  if (!we || we.workout.userId !== userId) return
+
+  const existingSets = await db.select().from(sets).where(eq(sets.workoutExerciseId, workoutExerciseId))
+  const nextSetNumber = existingSets.length + 1
+
+  await db.insert(sets).values({ workoutExerciseId, setNumber: nextSetNumber, reps, weight })
+}
+
+export async function updateSet(setId: number, userId: string, reps: number, weight: string) {
+  const s = await db.query.sets.findFirst({
+    where: eq(sets.id, setId),
+    with: { workoutExercise: { with: { workout: true } } },
+  })
+  if (!s || s.workoutExercise.workout.userId !== userId) return
+
+  await db.update(sets).set({ reps, weight }).where(eq(sets.id, setId))
+}
+
+export async function deleteSet(setId: number, userId: string) {
+  const s = await db.query.sets.findFirst({
+    where: eq(sets.id, setId),
+    with: { workoutExercise: { with: { workout: true } } },
+  })
+  if (!s || s.workoutExercise.workout.userId !== userId) return
+
+  await db.delete(sets).where(eq(sets.id, setId))
+}
+
+// ── Dashboard queries ─────────────────────────────────────────────────────
+
 export async function getWorkoutsWithDetailsByUserId(
   userId: string,
   dateRange?: { start: Date; end: Date }
@@ -69,6 +140,7 @@ export async function getWorkoutsWithDetailsByUserId(
         orderBy: (we, { asc }) => [asc(we.orderIndex)],
         with: {
           exercise: true,
+          customExercise: true,
           sets: {
             orderBy: (s, { asc }) => [asc(s.setNumber)],
           },

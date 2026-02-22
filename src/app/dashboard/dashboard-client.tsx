@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { Dumbbell, Calendar as CalendarIcon, Clock, Activity } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 import type { WorkoutWithDetails } from "@/services/workouts"
 
 type DateRange = "week" | "month" | "year"
@@ -95,23 +96,28 @@ export function DashboardClient({
           <p className="text-sm text-muted-foreground">Your workout history</p>
         </div>
 
-        <Button
-          variant={activeWorkoutStartedAt ? "destructive" : "default"}
-          className="gap-2"
-          onClick={() => router.push("/workout")}
-        >
-          {activeWorkoutStartedAt ? (
-            <>
-              <Activity className="h-4 w-4" />
-              Active · {formatElapsed(elapsed)}
-            </>
-          ) : (
-            <>
-              <Dumbbell className="h-4 w-4" />
-              Workout
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/exercises">Exercises</Link>
+          </Button>
+          <Button
+            variant={activeWorkoutStartedAt ? "destructive" : "default"}
+            className="gap-2"
+            onClick={() => router.push("/workout")}
+          >
+            {activeWorkoutStartedAt ? (
+              <>
+                <Activity className="h-4 w-4" />
+                Active · {formatElapsed(elapsed)}
+              </>
+            ) : (
+              <>
+                <Dumbbell className="h-4 w-4" />
+                Workout
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -196,7 +202,7 @@ export function DashboardClient({
                   <div className="flex flex-wrap gap-1.5">
                     {workout.workoutExercises.map((we) => (
                       <Badge key={we.id} variant="outline" className="text-xs font-normal">
-                        {we.exercise.name} × {we.sets.length}
+                        {we.customExercise?.name ?? we.exercise?.name} × {we.sets.length}
                       </Badge>
                     ))}
                   </div>
