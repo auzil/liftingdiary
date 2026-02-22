@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { Dumbbell, Calendar as CalendarIcon, Clock, Activity } from "lucide-react"
+import { Dumbbell, Calendar as CalendarIcon, Clock, Activity, Pencil } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import type { WorkoutWithDetails } from "@/services/workouts"
@@ -192,10 +192,17 @@ export function DashboardClient({
                         )}
                       </CardDescription>
                     </div>
-                    <Badge variant="secondary">
-                      <Dumbbell className="h-3 w-3 mr-1" />
-                      {totalSets(workout)} sets
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="secondary">
+                        <Dumbbell className="h-3 w-3 mr-1" />
+                        {totalSets(workout)} sets
+                      </Badge>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                        <Link href={`/workout/${workout.id}`}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">

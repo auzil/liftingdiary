@@ -15,6 +15,11 @@ import {
   deleteSet,
 } from "@/services/workouts"
 
+function revalidateWorkout(revalidateId?: number) {
+  revalidatePath("/workout")
+  if (revalidateId !== undefined) revalidatePath(`/workout/${revalidateId}`)
+}
+
 export async function startWorkoutAction() {
   const { userId } = await auth()
   if (!userId) redirect("/")
@@ -37,48 +42,49 @@ export async function finishWorkoutAction(workoutId: number) {
   revalidatePath("/workout")
 }
 
-export async function updateWorkoutNameAction(workoutId: number, name: string) {
+export async function updateWorkoutNameAction(workoutId: number, name: string, revalidateId?: number) {
   const { userId } = await auth()
   if (!userId) redirect("/")
   await updateWorkoutName(workoutId, userId, name)
-  revalidatePath("/workout")
+  revalidateWorkout(revalidateId)
 }
 
 export async function addExerciseToWorkoutAction(
   workoutId: number,
   exerciseId: number | null,
   customExerciseId?: number,
+  revalidateId?: number,
 ) {
   const { userId } = await auth()
   if (!userId) redirect("/")
   await addExerciseToWorkout(workoutId, userId, exerciseId, customExerciseId)
-  revalidatePath("/workout")
+  revalidateWorkout(revalidateId)
 }
 
-export async function removeExerciseFromWorkoutAction(workoutExerciseId: number) {
+export async function removeExerciseFromWorkoutAction(workoutExerciseId: number, revalidateId?: number) {
   const { userId } = await auth()
   if (!userId) redirect("/")
   await removeExerciseFromWorkout(workoutExerciseId, userId)
-  revalidatePath("/workout")
+  revalidateWorkout(revalidateId)
 }
 
-export async function addSetAction(workoutExerciseId: number, reps: number, weight: string) {
+export async function addSetAction(workoutExerciseId: number, reps: number, weight: string, revalidateId?: number) {
   const { userId } = await auth()
   if (!userId) redirect("/")
   await addSet(workoutExerciseId, userId, reps, weight)
-  revalidatePath("/workout")
+  revalidateWorkout(revalidateId)
 }
 
-export async function updateSetAction(setId: number, reps: number, weight: string) {
+export async function updateSetAction(setId: number, reps: number, weight: string, revalidateId?: number) {
   const { userId } = await auth()
   if (!userId) redirect("/")
   await updateSet(setId, userId, reps, weight)
-  revalidatePath("/workout")
+  revalidateWorkout(revalidateId)
 }
 
-export async function deleteSetAction(setId: number) {
+export async function deleteSetAction(setId: number, revalidateId?: number) {
   const { userId } = await auth()
   if (!userId) redirect("/")
   await deleteSet(setId, userId)
-  revalidatePath("/workout")
+  revalidateWorkout(revalidateId)
 }

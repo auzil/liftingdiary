@@ -24,6 +24,22 @@ export async function getLatestWorkoutByUserId(userId: string) {
 
 export type WorkoutSession = NonNullable<Awaited<ReturnType<typeof getLatestWorkoutByUserId>>>
 
+export async function getWorkoutByIdForUser(id: number, userId: string) {
+  return (await db.query.workouts.findFirst({
+    where: and(eq(workouts.id, id), eq(workouts.userId, userId)),
+    with: {
+      workoutExercises: {
+        orderBy: (we, { asc }) => [asc(we.orderIndex)],
+        with: {
+          exercise: true,
+          customExercise: true,
+          sets: { orderBy: (s, { asc }) => [asc(s.setNumber)] },
+        },
+      },
+    },
+  })) ?? null
+}
+
 export async function getActiveWorkoutByUserId(userId: string) {
   return (await db.query.workouts.findFirst({
     where: and(eq(workouts.userId, userId), isNull(workouts.completedAt)),
