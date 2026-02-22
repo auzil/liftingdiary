@@ -8,6 +8,7 @@ import {
   createWorkout,
   completeWorkout,
   updateWorkoutName,
+  deleteWorkout,
   addExerciseToWorkout,
   removeExerciseFromWorkout,
   addSet,
@@ -87,4 +88,12 @@ export async function deleteSetAction(setId: number, revalidateId?: number) {
   if (!userId) redirect("/")
   await deleteSet(setId, userId)
   revalidateWorkout(revalidateId)
+}
+
+export async function deleteWorkoutAction(workoutId: number) {
+  const { userId } = await auth()
+  if (!userId) redirect("/")
+  await deleteWorkout(workoutId, userId)
+  revalidatePath("/dashboard")
+  redirect("/dashboard")
 }

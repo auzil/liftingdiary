@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import Link from "next/link"
 import { format } from "date-fns"
-import { CalendarIcon, Clock, Dumbbell, Plus, Save, Trash2, X } from "lucide-react"
+import { CalendarIcon, Clock, Dumbbell, Plus, Save, Trash2, X, ChevronLeft } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +28,7 @@ import {
   addSetAction,
   updateSetAction,
   deleteSetAction,
+  deleteWorkoutAction,
 } from "@/actions/workouts"
 import type { WorkoutSession } from "@/services/workouts"
 
@@ -101,6 +103,13 @@ export function WorkoutEditClient({ workout, allExercises }: Props) {
 
   return (
     <div className="flex min-h-screen items-start justify-center p-4 pt-8">
+      <div className="w-full max-w-md space-y-4">
+      <Button variant="ghost" size="sm" asChild className="md:hidden -ml-2">
+        <Link href="/dashboard">
+          <ChevronLeft className="h-4 w-4" />
+          Dashboard
+        </Link>
+      </Button>
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -342,8 +351,45 @@ export function WorkoutEditClient({ workout, allExercises }: Props) {
               </div>
             </PopoverContent>
           </Popover>
+
+          <Separator />
+
+          {/* Delete workout */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full" disabled={mutating}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Workout
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete workout?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  <span className="font-medium text-foreground">
+                    {workout.name ?? "This workout"}
+                  </span>{" "}
+                  and all its exercises and sets will be permanently deleted.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={() =>
+                    startMutation(async () => {
+                      await deleteWorkoutAction(workout.id)
+                    })
+                  }
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }

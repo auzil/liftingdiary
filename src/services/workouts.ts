@@ -68,6 +68,12 @@ export async function updateWorkoutName(workoutId: number, userId: string, name:
     .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
 }
 
+export async function deleteWorkout(workoutId: number, userId: string) {
+  await db
+    .delete(workouts)
+    .where(and(eq(workouts.id, workoutId), eq(workouts.userId, userId)))
+}
+
 // ── Exercises catalog ─────────────────────────────────────────────────────
 
 export type Exercise = typeof exercises.$inferSelect

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getActiveWorkoutByUserId } from "@/services/workouts";
 import { WorkoutHeaderButton } from "./workout-header-button";
+import { MobileNav } from "./mobile-nav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,7 +40,7 @@ export default async function RootLayout({
         >
           <header className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
             <SignedIn>
-              <nav className="flex items-center gap-1">
+              <nav className="hidden md:flex items-center gap-1">
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/dashboard">Dashboard</Link>
                 </Button>
@@ -49,10 +50,11 @@ export default async function RootLayout({
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/analytics/exercises">Analytics</Link>
                 </Button>
-                <WorkoutHeaderButton
-                  activeWorkoutStartedAt={activeWorkout?.startedAt?.toISOString() ?? null}
-                />
               </nav>
+              <MobileNav />
+              <WorkoutHeaderButton
+                activeWorkoutStartedAt={activeWorkout?.startedAt?.toISOString() ?? null}
+              />
             </SignedIn>
             <div className="flex items-center gap-3 ml-auto">
               <SignedOut>
