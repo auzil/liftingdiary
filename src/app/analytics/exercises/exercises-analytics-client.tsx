@@ -1,11 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
 import { format } from "date-fns"
 import { Line, LineChart, XAxis, YAxis, CartesianGrid } from "recharts"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -30,14 +27,7 @@ export function ExercisesAnalyticsClient({ exercises, progressByExercise }: Prop
   const progress = selected ? (progressByExercise[selected.id] ?? []) : []
 
   return (
-    <div className="relative flex min-h-screen items-start justify-center p-4 pt-16">
-      <Button variant="ghost" size="sm" className="absolute top-4 left-4 gap-1.5" asChild>
-        <Link href="/dashboard">
-          <ArrowLeft className="h-4 w-4" />
-          Dashboard
-        </Link>
-      </Button>
-
+    <div className="flex min-h-screen items-start justify-center p-4 pt-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Exercise History</CardTitle>

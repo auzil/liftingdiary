@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { Dumbbell, Calendar as CalendarIcon, Clock, Activity, Pencil } from "lucide-react"
+import { Dumbbell, Calendar as CalendarIcon, Clock, Pencil } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import type { WorkoutWithDetails } from "@/services/workouts"
@@ -36,39 +36,21 @@ const PRESETS: { value: DateRange; label: string }[] = [
   { value: "year", label: "This Year" },
 ]
 
-function formatElapsed(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":")
-}
-
 export function DashboardClient({
   workouts,
-  activeWorkoutStartedAt,
 }: {
   workouts: WorkoutWithDetails[]
-  activeWorkoutStartedAt: Date | null
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [calendarOpen, setCalendarOpen] = useState(false)
-  const [elapsed, setElapsed] = useState<number>(0)
   const [mounted, setMounted] = useState(false)
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setMounted(true)
   }, [])
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (!activeWorkoutStartedAt) return
-    const tick = () =>
-      setElapsed(Math.floor((Date.now() - activeWorkoutStartedAt.getTime()) / 1000))
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [activeWorkoutStartedAt?.getTime()])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const range = searchParams.get("range") ?? "week"
   const dateParam = searchParams.get("date")
@@ -90,37 +72,9 @@ export function DashboardClient({
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Your workout history</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/exercises">Exercises</Link>
-          </Button>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/analytics/exercises">Analytics</Link>
-          </Button>
-          <Button
-            variant={activeWorkoutStartedAt ? "destructive" : "default"}
-            className="gap-2"
-            onClick={() => router.push("/workout")}
-          >
-            {activeWorkoutStartedAt ? (
-              <>
-                <Activity className="h-4 w-4" />
-                Active · {formatElapsed(elapsed)}
-              </>
-            ) : (
-              <>
-                <Dumbbell className="h-4 w-4" />
-                Workout
-              </>
-            )}
-          </Button>
-        </div>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Your workout history</p>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">

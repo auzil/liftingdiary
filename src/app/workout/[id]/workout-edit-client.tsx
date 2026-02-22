@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { format } from "date-fns"
-import { ArrowLeft, CalendarIcon, Clock, Dumbbell, Plus, Save, Trash2, X } from "lucide-react"
+import { CalendarIcon, Clock, Dumbbell, Plus, Save, Trash2, X } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +20,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import Link from "next/link"
 import {
   updateWorkoutNameAction,
   addExerciseToWorkoutAction,
@@ -101,16 +100,7 @@ export function WorkoutEditClient({ workout, allExercises }: Props) {
   }
 
   return (
-    <div className="relative flex min-h-screen items-start justify-center p-4 pt-16">
-      <div className="absolute top-4 left-4">
-        <Button variant="ghost" size="sm" className="gap-1.5" asChild>
-          <Link href="/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-            Dashboard
-          </Link>
-        </Button>
-      </div>
-
+    <div className="flex min-h-screen items-start justify-center p-4 pt-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
