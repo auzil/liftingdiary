@@ -207,21 +207,78 @@ All dialogs close optimistically before the server action completes. The page re
 
 ---
 
+---
+
+## Analytics — Exercises (`/analytics/exercises`)
+
+**Files:** `src/app/analytics/exercises/page.tsx`, `src/app/analytics/exercises/exercises-analytics-client.tsx`
+
+### What it does
+
+Read-only analytics view showing every exercise the user has ever logged in a workout, ordered by most recently used. Displays the all-time max weight per exercise.
+
+### Server Component (`page.tsx`)
+
+1. Auth check; redirects to `/` if not logged in.
+2. Calls `getExerciseAnalyticsByUserId(userId)` from `@/services/exercises`.
+3. Renders `ExercisesAnalyticsClient` with the result.
+
+No `searchParams`, no `Suspense` (client component uses no `useSearchParams`).
+
+### Client Component (`exercises-analytics-client.tsx`)
+
+Read-only — no mutations, no local state beyond rendering.
+
+**UI:**
+- Back button (`Button` + `ArrowLeft` icon, `Link` to `/dashboard`) — absolute top-left
+- `Card` centered, `max-w-md`
+- `CardHeader` with title "Exercise History"
+- `CardContent`:
+  - Empty state: `<p className="text-sm text-muted-foreground">` if no exercises logged
+  - List: for each exercise, a row showing:
+    - Exercise name (`text-sm font-medium`)
+    - Last used date (`text-xs text-muted-foreground`, formatted `dd.MM.yyyy`)
+    - `Badge variant="secondary"` showing max weight in kg (omitted if no sets recorded)
+
+### Service function
+
+`getExerciseAnalyticsByUserId(userId)` in `src/services/exercises.ts`:
+- Runs two parallel Drizzle queries — one for global exercises, one for custom exercises
+- Each query: joins `workoutExercises` → `exercises`/`customExercises` → `workouts` (filtered by userId) → left join `sets`
+- Aggregates `MAX(workouts.startedAt)` as `lastUsedAt` and `MAX(sets.weight)` as `maxWeight`, grouped by exercise
+- Merges both result arrays and sorts by `lastUsedAt DESC` in the service layer
+
+Return type:
+```ts
+export type ExerciseAnalytics = {
+  id: string           // composite key: "e{id}" | "c{id}"
+  name: string
+  lastUsedAt: Date
+  maxWeight: string | null  // numeric string from DB
+}
+```
+
+---
+
 ## Navigation Map
 
 ```
 /dashboard
-  ├── → /workout          (Workout button)
-  ├── → /workout/[id]     (Pencil icon on each card)
-  └── → /exercises        (Exercises link)
+  ├── → /workout              (Workout button)
+  ├── → /workout/[id]         (Pencil icon on each card)
+  ├── → /exercises            (Exercises link)
+  └── → /analytics/exercises  (Analytics link)
 
 /workout
-  ├── → /dashboard        (back button)
-  └── → /exercises        (link)
+  ├── → /dashboard            (back button)
+  └── → /exercises            (link)
 
 /workout/[id]
-  └── → /dashboard        (back button)
+  └── → /dashboard            (back button)
 
 /exercises
-  └── → /dashboard        (back button)
+  └── → /dashboard            (back button)
+
+/analytics/exercises
+  └── → /dashboard            (back button)
 ```
