@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Pencil, Trash2, Plus } from "lucide-react"
+import { Pencil, Trash2, Plus, ChevronLeft } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,6 +27,7 @@ import {
   updateCustomExerciseAction,
   deleteCustomExerciseAction,
 } from "@/actions/exercises"
+import Link from "next/link"
 import type { CustomExercise } from "@/services/exercises"
 
 interface Props {
@@ -83,6 +84,13 @@ export function ExercisesClient({ exercises }: Props) {
 
   return (
     <div className="flex min-h-screen items-start justify-center p-4 pt-8">
+      <div className="w-full max-w-md space-y-4">
+      <Button variant="ghost" size="sm" asChild className="md:hidden -ml-2">
+        <Link href="/dashboard">
+          <ChevronLeft className="h-4 w-4" />
+          Dashboard
+        </Link>
+      </Button>
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -130,6 +138,7 @@ export function ExercisesClient({ exercises }: Props) {
           )}
         </CardContent>
       </Card>
+      </div>
 
       {/* New exercise dialog */}
       <Dialog open={newOpen} onOpenChange={setNewOpen}>

@@ -147,7 +147,7 @@ Shares nearly identical structure with `WorkoutClient`'s active state. Key diffe
 
 | Aspect | Workout Session | Edit Workout |
 |--------|----------------|--------------|
-| Back button | Dashboard + Exercises | Dashboard only |
+| Back button | `← Dashboard` in content (mobile only) | `← Dashboard` in content (mobile only) |
 | No live timer | — | — |
 | State machine | 3 states | Fixed (always edit UI) |
 | Remove exercise | `X` button, no confirmation | `X` button with `AlertDialog` confirmation |
@@ -233,7 +233,7 @@ No `searchParams`. All progress data is pre-fetched server-side so the client ne
 - `selected: ExerciseAnalytics | null` — the exercise whose progress dialog is open (`null` = closed)
 
 **UI:**
-- Back button (`Button` + `ArrowLeft` icon, `Link` to `/dashboard`) — absolute top-left
+- `← Dashboard` back button (`Button variant="ghost"` + `ChevronLeft` icon, `Link` to `/dashboard`) — first element in content, mobile only (`md:hidden`)
 - `Card` centered, `max-w-md`
 - `CardHeader` with title "Exercise History"
 - `CardContent`:
@@ -289,25 +289,60 @@ export type ExerciseProgressPoint = {
 
 ---
 
+## Header Navigation
+
+The global header (`src/app/layout.tsx`) contains all persistent navigation. Layout is responsive:
+
+### Desktop (`md+`)
+
+Inline nav in the header (left side):
+
+| Element | Destination | Component |
+|---------|-------------|-----------|
+| Dashboard | `/dashboard` | `Button variant="ghost"` |
+| Exercises | `/exercises` | `Button variant="ghost"` |
+| Analytics | `/analytics/exercises` | `Button variant="ghost"` |
+| Workout button | `/workout` | `WorkoutHeaderButton` (client component) |
+
+The Workout button shows a live elapsed timer and turns destructive (red) when a workout is active.
+
+### Mobile (`< md`)
+
+The inline nav is hidden. The header shows (left to right):
+
+1. **Hamburger icon** (`MobileNav`, `src/app/mobile-nav.tsx`) — opens a `Sheet` from the left with Dashboard, Exercises, Analytics links
+2. **Workout button** (`WorkoutHeaderButton`) — always visible; shows live timer when active
+
+### In-content back button (mobile only, `md:hidden`)
+
+Every non-dashboard page renders a `← Dashboard` ghost button as the **first element of its content area**, above the main card. This is visible only on mobile (`md:hidden`) since desktop users have the inline nav.
+
+Files with the in-content back button:
+- `src/app/workout/workout-client.tsx` (all three states: empty, active, idle)
+- `src/app/workout/[id]/workout-edit-client.tsx`
+- `src/app/exercises/exercises-client.tsx`
+- `src/app/analytics/exercises/exercises-analytics-client.tsx`
+
+---
+
 ## Navigation Map
 
 ```
 /dashboard
-  ├── → /workout              (Workout button)
-  ├── → /workout/[id]         (Pencil icon on each card)
-  ├── → /exercises            (Exercises link)
-  └── → /analytics/exercises  (Analytics link)
+  ├── → /workout              (Workout button — header, always visible)
+  ├── → /workout/[id]         (Pencil icon on each workout card)
+  ├── → /exercises            (header nav / mobile Sheet)
+  └── → /analytics/exercises  (header nav / mobile Sheet)
 
 /workout
-  ├── → /dashboard            (back button)
-  └── → /exercises            (link)
+  └── → /dashboard            (← Dashboard button in content, mobile only)
 
 /workout/[id]
-  └── → /dashboard            (back button)
+  └── → /dashboard            (← Dashboard button in content, mobile only)
 
 /exercises
-  └── → /dashboard            (back button)
+  └── → /dashboard            (← Dashboard button in content, mobile only)
 
 /analytics/exercises
-  └── → /dashboard            (back button)
+  └── → /dashboard            (← Dashboard button in content, mobile only)
 ```

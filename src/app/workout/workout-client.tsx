@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useTransition } from "react"
+import Link from "next/link"
 import { format } from "date-fns"
-import { Dumbbell, Play, Timer, CheckCircle2, Calendar as CalendarIcon, Clock, Save, Plus, Trash2, X } from "lucide-react"
+import { Dumbbell, Play, Timer, CheckCircle2, Calendar as CalendarIcon, Clock, Save, Plus, Trash2, X, ChevronLeft } from "lucide-react"
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -127,7 +128,14 @@ export function WorkoutClient({ latestWorkout, allExercises }: Props) {
   // ── Empty state ──────────────────────────────────────────────────────────
   if (state === "empty") {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-screen items-start justify-center p-4 pt-8">
+        <div className="w-full max-w-md space-y-4">
+        <Button variant="ghost" size="sm" asChild className="md:hidden -ml-2">
+          <Link href="/dashboard">
+            <ChevronLeft className="h-4 w-4" />
+            Dashboard
+          </Link>
+        </Button>
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
@@ -143,6 +151,7 @@ export function WorkoutClient({ latestWorkout, allExercises }: Props) {
             </Button>
           </CardFooter>
         </Card>
+        </div>
       </div>
     )
   }
@@ -153,6 +162,13 @@ export function WorkoutClient({ latestWorkout, allExercises }: Props) {
 
     return (
       <div className="flex min-h-screen items-start justify-center p-4 pt-8">
+        <div className="w-full max-w-md space-y-4">
+        <Button variant="ghost" size="sm" asChild className="md:hidden -ml-2">
+          <Link href="/dashboard">
+            <ChevronLeft className="h-4 w-4" />
+            Dashboard
+          </Link>
+        </Button>
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -363,6 +379,7 @@ export function WorkoutClient({ latestWorkout, allExercises }: Props) {
             </Button>
           </CardFooter>
         </Card>
+        </div>
       </div>
     )
   }
@@ -374,7 +391,14 @@ export function WorkoutClient({ latestWorkout, allExercises }: Props) {
   const durationSec = Math.floor((completedAt.getTime() - startedAt.getTime()) / 1000)
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen items-start justify-center p-4 pt-8">
+      <div className="w-full max-w-md space-y-4">
+      <Button variant="ghost" size="sm" asChild className="md:hidden -ml-2">
+        <Link href="/dashboard">
+          <ChevronLeft className="h-4 w-4" />
+          Dashboard
+        </Link>
+      </Button>
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -450,6 +474,7 @@ export function WorkoutClient({ latestWorkout, allExercises }: Props) {
           </Button>
         </CardFooter>
       </Card>
+      </div>
     </div>
   )
 }
