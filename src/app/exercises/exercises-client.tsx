@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Pencil, Trash2, Plus, ArrowLeft } from "lucide-react"
+import { Pencil, Trash2, Plus } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import Link from "next/link"
 import {
   createCustomExerciseAction,
   updateCustomExerciseAction,
@@ -82,18 +81,8 @@ export function ExercisesClient({ exercises }: Props) {
     })
   }
 
-  const backButton = (
-    <Button variant="ghost" size="sm" className="absolute top-4 left-4 gap-1.5" asChild>
-      <Link href="/dashboard">
-        <ArrowLeft className="h-4 w-4" />
-        Dashboard
-      </Link>
-    </Button>
-  )
-
   return (
-    <div className="relative flex min-h-screen items-start justify-center p-4 pt-16">
-      {backButton}
+    <div className="flex min-h-screen items-start justify-center p-4 pt-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
